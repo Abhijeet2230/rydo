@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>User Registration</title>
+    <script>
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(showPosition, showError);
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        }
+
+        function showPosition(position) {
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("location").value = data.address.city || data.address.town || data.address.village || "Unknown";
+                })
+                .catch(error => console.log("Error fetching location: ", error));
+        }
+
+        function showError(error) {
+            alert("Error fetching location: " + error.message);
+        }
+    </script>
+</head>
+<body>
+    <h2>User Registration</h2>
+    
+    <form th:action="@{/user/register}" th:object="${user}" method="post">
+        <label>Name:</label>
+        <input type="text" th:field="*{name}" required />
+        <span th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></span>
+        <br><br>
+
+        <label>Email:</label>
+        <input type="email" th:field="*{email}" required />
+        <span th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></span>
+        <br><br>
+
+        <label>Phone:</label>
+        <input type="text" th:field="*{phone}" required pattern="\d{10}" />
+        <span th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}"></span>
+        <br><br>
+
+        <label>Password:</label>
+        <input type="password" th:field="*{password}" required />
+        <span th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></span>
+        <br><br>
+
+        <label>Location:</label>
+        <input type="text" id="location" th:field="*{location}" required />
+        <button type="button" onclick="getLocation()">Get Location</button>
+        <span th:if="${#fields.hasErrors('location')}" th:errors="*{location}"></span>
+        <br><br>
+
+        <button type="submit">Register</button>
+    </form>
+
+    <!-- If there's an error message (email already exists), show it -->
+    <p th:if="${error}" th:text="${error}" style="color: red;"></p>
+    
+    <a th:href="@{/login}">Login</a>
+</body>  
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Registration - Rydo</title>
+<script>
+    // Function to fetch and display the current location as a human-readable address
+    function getCurrentLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function (position) {
+                var latitude = position.coords.latitude;
+                var longitude = position.coords.longitude;
+                var accuracy = position.coords.accuracy;
+
+                // Check if the accuracy is acceptable (for example, within 100 meters)
+                if (accuracy > 100) {
+                    alert("Your location accuracy is too low to provide a precise address.");
+                    return;
+                }
+
+                // Fetch the human-readable address from latitude and longitude using OpenStreetMap API
+                var apiUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`;
+
+                fetch(apiUrl)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.display_name) {
+                            // Set the current location input field value with the full address
+                            document.getElementById("currentLocation").value = data.display_name;
+                        } else {
+                            alert("Could not fetch location name.");
+                        }
+                    })
+                    .catch(error => alert("Error fetching location: " + error.message));
+            }, function (error) {
+                alert("Error occurred while fetching location: " + error.message);
+            }, {
+                enableHighAccuracy: true, // Request higher accuracy if available
+                timeout: 10000, // Set a timeout for location retrieval
+                maximumAge: 0 // Don't use cached location
+            });
+        } else {
+            alert("Geolocation is not supported by this browser.");
+        }
+    }
+</script>
+
+</head>
+<body>
+
+<h2>Driver Registration</h2>
+
+<!-- Display success or error message -->
+<div th:if="${message}">
+    <p th:text="${message}" style="color: green;"></p>
+</div>
+<div th:if="${error}">
+    <p th:text="${error}" style="color: red;"></p>
+</div>
+
+<!-- Registration Form -->
+<form action="#" th:action="@{/driver/register}" th:object="${driver}" method="post">
+    <label for="name">Full Name:</label>
+    <input type="text" id="name" th:field="*{name}" required autocomplete="off" />
+    <p th:if="${#fields.hasErrors('name')}" th:errors="*{name}" style="color: red;"></p>
+    <br><br>
+
+    <label for="email">Email:</label>
+    <input type="email" id="email" th:field="*{email}" required autocomplete="off" />
+    <p th:if="${#fields.hasErrors('email')}" th:errors="*{email}" style="color: red;"></p>
+    <br><br>
+
+    <label for="phone">Phone:</label>
+    <input type="text" id="phone" th:field="*{phone}" required autocomplete="off" />
+    <p th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}" style="color: red;"></p>
+    <br><br>
+
+    <label for="password">Password:</label>
+    <input type="password" id="password" th:field="*{password}" required autocomplete="new-password" />
+    <p th:if="${#fields.hasErrors('password')}" th:errors="*{password}" style="color: red;"></p>
+    <br><br>
+
+    <label for="licenseNumber">License Number:</label>
+    <input type="text" id="licenseNumber" th:field="*{licenseNumber}" required autocomplete="off" />
+    <p th:if="${#fields.hasErrors('licenseNumber')}" th:errors="*{licenseNumber}" style="color: red;"></p>
+    <br><br>
+
+    <label for="currentLocation">Current Location:</label>
+    <input type="text" id="currentLocation" th:field="*{currentLocation}" required readonly />
+    <button type="button" onclick="getCurrentLocation()">Use Current Location</button>
+    <p th:if="${#fields.hasErrors('currentLocation')}" th:errors="*{currentLocation}" style="color: red;"></p>
+    <br><br>
+
+    <button type="submit">Register</button>
+</form>
+
+</body>
+</html>
