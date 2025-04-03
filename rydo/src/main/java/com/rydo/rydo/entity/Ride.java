@@ -43,6 +43,9 @@ public class Ride {
 	private double fareEstimate;
 
 	private double fareFinal;
+	
+	@NotBlank
+	private String vehicleType;  
 
 
     @Enumerated(EnumType.STRING)

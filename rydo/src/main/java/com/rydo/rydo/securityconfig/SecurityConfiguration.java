@@ -21,7 +21,7 @@ public class SecurityConfiguration {
 	public SecurityFilterChain securityFilterChain(HttpSecurity http, CustomAuthenticationSuccessHandler successHandler) throws Exception {
 	    http
 	        .authorizeHttpRequests(auth -> auth
-	            .requestMatchers("/login", "/user/register", "/driver/register").permitAll()
+	            .requestMatchers("/login", "/user/register", "/driver/register","/user/ride/request","/ws/**").permitAll()
 	            .requestMatchers("/user/**").hasRole("USER")  // Only users can access /user/*
 	            .requestMatchers("/driver/**").hasRole("DRIVER") // Only drivers can access 
 	            .anyRequest().authenticated()

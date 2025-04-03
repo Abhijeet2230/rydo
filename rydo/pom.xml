@@ -81,6 +81,19 @@
     <artifactId>spring-security-taglibs</artifactId>
 </dependency>
 
+<!-- Spring WebSocket -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-websocket</artifactId>
+</dependency>
+
+<!-- Spring Messaging (Required for STOMP WebSockets) -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-web</artifactId>
+</dependency>
+
+
 	</dependencies>
 
 	<build>

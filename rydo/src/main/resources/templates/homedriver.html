@@ -4,6 +4,18 @@
     <meta charset="UTF-8">
     <title>Driver Home</title>
 </head>
+<script>
+    let socket = new SockJS('/ws');
+    let stompClient = Stomp.over(socket);
+
+    stompClient.connect({}, function (frame) {
+        stompClient.subscribe('/topic/rideRequests', function (message) {
+            let ride = JSON.parse(message.body);
+            alert(`New Ride Request: ${ride.pickupLocation} to ${ride.dropLocation} (${ride.vehicleType})`);
+        });
+    });
+</script>
+
 <body>
     <h1>Welcome, Driver!</h1>
     

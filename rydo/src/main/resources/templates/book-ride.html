@@ -1,122 +1,154 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Book a Ride</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    
-    <!-- Updated Google Maps API Loading -->
-    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDdP9ezPoR_FQygVCGVyc-VhHvDr60tKZE&libraries=places&callback=initMap&loading=async"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Book a Ride</title>
+<link rel="stylesheet"
+	href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 
-    <style>
-        #map { height: 300px; width: 100%; margin-top: 20px; }
-        #fareEstimate { display: none; }
-    </style>
+<script async defer
+	src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDdP9ezPoR_FQygVCGVyc-VhHvDr60tKZE&libraries=places&callback=initMap&loading=async"></script>
+
+<style>
+#map {
+	height: 300px;
+	width: 100%;
+	margin-top: 20px;
+}
+
+#fareEstimate, #rideRequestSection {
+	display: none;
+}
+</style>
 </head>
 <body>
-    <div class="container mt-5">
-        <h2>Book a Ride</h2>
-        <form id="rideForm">
-            <div class="form-group">
-                <label for="pickup">Pickup Location (From):</label>
-                <input type="text" id="pickup" class="form-control" placeholder="Enter pickup location" oninput="getSuggestions('pickup')">
-                <div id="pickup-suggestions" class="list-group"></div>
-            </div>
-            <div class="form-group">
-                <label for="drop">Drop Location (To):</label>
-                <input type="text" id="drop" class="form-control" placeholder="Enter drop location" oninput="getSuggestions('drop')">
-                <div id="drop-suggestions" class="list-group"></div>
-            </div>
-            <button type="button" class="btn btn-primary" onclick="getFareEstimate()">Get Fare Estimate</button>
-        </form>
+	<div class="container mt-5">
+		<h2>Book a Ride</h2>
+		<form id="rideForm">
+			<div class="form-group">
+				<label for="pickup">Pickup Location (From):</label> <input
+					type="text" id="pickup" class="form-control"
+					placeholder="Enter pickup location">
+			</div>
+			<div class="form-group">
+				<label for="drop">Drop Location (To):</label> <input type="text"
+					id="drop" class="form-control" placeholder="Enter drop location">
+			</div>
+			<button type="button" class="btn btn-primary"
+				onclick="getFareEstimate()">Get Fare Estimate</button>
+		</form>
 
-        <div id="map"></div> <!-- Google Map Display -->
+		<div id="map"></div>
+		<!-- Google Map Display -->
 
-        <div id="fareEstimate" class="mt-4">
-            <h4>Fare Estimate</h4>
-            <div id="vehicleTypes"></div>
-        </div>
+		<div id="fareEstimate" class="mt-4">
+			<h4>Fare Estimate</h4>
+			<div id="vehicleTypes"></div>
+		</div>
 
-        <div id="error-message" class="text-danger mt-3" style="display: none;">Oops! Something went wrong.</div>
-    </div>
+		<div id="rideRequestSection" class="mt-4">
+			<h4>Select Vehicle Type</h4>
+			<div>
+				<input type="radio" id="auto" name="vehicleType" value="Auto"
+					onclick="enableRideRequest()"> <label for="auto">Auto</label>
+			</div>
+			<div>
+				<input type="radio" id="cab" name="vehicleType" value="Cab"
+					onclick="enableRideRequest()"> <label for="cab">Cab</label>
+			</div>
+			<button id="requestRideBtn" class="btn btn-success mt-3"
+				onclick="requestRide()" disabled>Request Ride</button>
+		</div>
 
-    <script>
-        let map, service;
+		<div id="error-message" class="text-danger mt-3"
+			style="display: none;">Oops! Something went wrong.</div>
+	</div>
+
+	<script>
+        let stompClient;
+        let userPickup, userDrop;
 
         function initMap() {
-            map = new google.maps.Map(document.getElementById("map"), {
-                center: { lat: 18.5204, lng: 73.8567 }, // Pune Coordinates
+            new google.maps.Map(document.getElementById("map"), {
+                center: { lat: 18.5204, lng: 73.8567 },
                 zoom: 12
-            });
-
-            // New Places Service for Autocomplete Suggestions
-            service = new google.maps.places.AutocompleteSuggestion();
-        }
-
-        function getSuggestions(inputId) {
-            const inputElement = document.getElementById(inputId);
-            const query = inputElement.value;
-            const suggestionsDiv = document.getElementById(`${inputId}-suggestions`);
-
-            if (!query) {
-                suggestionsDiv.innerHTML = "";
-                return;
-            }
-
-            service.getSuggestions({ input: query }, (predictions, status) => {
-                if (status === google.maps.places.PlacesServiceStatus.OK) {
-                    suggestionsDiv.innerHTML = "";
-                    predictions.forEach((place) => {
-                        const suggestionItem = document.createElement("a");
-                        suggestionItem.href = "#";
-                        suggestionItem.classList.add("list-group-item", "list-group-item-action");
-                        suggestionItem.textContent = place.description;
-                        suggestionItem.onclick = function () {
-                            inputElement.value = place.description;
-                            suggestionsDiv.innerHTML = "";
-                        };
-                        suggestionsDiv.appendChild(suggestionItem);
-                    });
-                }
             });
         }
 
         function getFareEstimate() {
-            const pickup = document.getElementById("pickup").value;
-            const drop = document.getElementById("drop").value;
+            userPickup = document.getElementById("pickup").value;
+            userDrop = document.getElementById("drop").value;
 
-            if (!pickup || !drop) {
+            if (!userPickup || !userDrop) {
                 document.getElementById("error-message").style.display = "block";
                 return;
             }
 
-            fetch(`/user/ride/fare?pickup=${encodeURIComponent(pickup)}&drop=${encodeURIComponent(drop)}`)
-                .then(response => {
-                    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-                    return response.json();
-                })
+            fetch(`/user/ride/fare?pickup=${encodeURIComponent(userPickup)}&drop=${encodeURIComponent(userDrop)}`)
+                .then(response => response.json())
                 .then(data => {
-                    if (data && data.autoFare && data.cabFare) {
+                    if (data.autoFare && data.cabFare) {
                         document.getElementById("error-message").style.display = "none";
                         document.getElementById("fareEstimate").style.display = "block";
                         document.getElementById("vehicleTypes").innerHTML = `
                             <p>Auto Fare: ₹${data.autoFare}</p>
                             <p>Cab Fare: ₹${data.cabFare}</p>
                         `;
-                    } else {
-                        throw new Error("Invalid fare data");
+                        document.getElementById("rideRequestSection").style.display = "block";
                     }
                 })
-                .catch(error => {
-                    console.error("Error fetching fare estimate:", error);
-                    document.getElementById("error-message").style.display = "block";
-                });
+                .catch(() => document.getElementById("error-message").style.display = "block");
         }
-    </script>
 
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+        function enableRideRequest() {
+            document.getElementById("requestRideBtn").disabled = false;
+        }
+
+        function requestRide() {
+            const selectedVehicle = document.querySelector('input[name="vehicleType"]:checked').value;
+
+            if (!selectedVehicle) {
+                alert("Please select a vehicle type.");
+                return;
+            }
+
+            fetch("/user/ride/request", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: new URLSearchParams({
+                    pickup: userPickup,
+                    drop: userDrop,
+                    vehicleType: selectedVehicle
+                })
+            }).then(response => response.text())
+            .then(message => {
+                alert(message);
+            }).catch(error => console.error("Error requesting ride:", error));
+        }
+
+        
+
+    </script>
+    
+    <!-- Load SockJS & STOMP.js First -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+
+<script>
+    function connectWebSocket() {
+        let socket = new SockJS('/ws');  // This should work now
+        stompClient = Stomp.over(socket);
+        stompClient.connect({}, function (frame) {
+            console.log("Connected to WebSocket: " + frame);
+        });
+    }
+
+    connectWebSocket();  // Call this function after the scripts are loaded
+</script>
+	
+	<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+	<script
+		src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>
